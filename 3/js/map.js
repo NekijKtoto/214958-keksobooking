@@ -22,6 +22,7 @@
  */
 
 var NUMBER_OF_ADS = 8;
+
 var PIN_SIZE = {
   WIDTH: 56,
   HEIGHT: 75
@@ -55,6 +56,8 @@ var KEYS = {
   ESC: 27,
   ENTER: 13
 };
+
+var ACTIVE_PIN = 'pin--active';
 
 /**
  * @param {number} min
@@ -167,12 +170,14 @@ var createAd = function () {
 /**
  * Создаёт метку на карте
  * @param {Ad} ad
+ * @param {number} index индекс элемента массива
  * @return {HTMLDivElement}
  */
-var createPin = function (ad) {
+var createPin = function (ad, index) {
   var div = document.createElement('div');
   div.classList.add('pin');
   div.setAttribute('tabindex', '0');
+  div.dataset.ad = index;
   div.style.left = ad.location.x - PIN_SIZE.WIDTH / 2 + 'px';
   div.style.top = ad.location.y - PIN_SIZE.HEIGHT + 'px';
   div.innerHTML = '<img src="' + ad.author.avatar + '" class="rounded" width="40" height="40">';
@@ -188,8 +193,8 @@ var createPin = function (ad) {
 var getFragment = function (array, fn) {
   var fragment = document.createDocumentFragment();
 
-  array.forEach(function (elem) {
-    fragment.appendChild(fn(elem));
+  array.forEach(function (elem, index) {
+    fragment.appendChild(fn(elem, index));
   });
 
   return fragment;
@@ -249,7 +254,7 @@ var pins = pinMap.querySelectorAll('.pin:not(:first-child)');
 
 /**
  * Обрабатывает событие нажатия клавиши enter или клика на пин
- * @param {object} evt
+ * @param {Event} evt
  */
 var pinEventHandler = function (evt) {
   if (evt.keyCode === KEYS.ENTER || evt.type === 'click') {
@@ -259,24 +264,18 @@ var pinEventHandler = function (evt) {
 
 /**
  * Активирует пин
- * @param {object} evt
+ * @param {Event} evt
  */
 var activatePin = function (evt) {
-  var activePinNumber;
-  removeClass(pins, 'pin--active');
+  removeClass(pins, ACTIVE_PIN);
   var target = evt.currentTarget;
-  target.classList.add('pin--active');
-  for (var i = 0; i < pins.length; i++) {
-    if (pins[i] === target) {
-      activePinNumber = i;
-    }
-  }
-  openDialog(activePinNumber);
+  target.classList.add(ACTIVE_PIN);
+  openDialog(target.dataset.ad);
   offerDialog.classList.remove('hidden');
 };
 
 /**
- * Октрывает окно диалога с информацией о текущем выбранном объекте
+ * Открывает окно диалога с информацией о текущем выбранном объекте
  * @param {number} activePinNumber - порядковый номер активного пина
  */
 var openDialog = function (activePinNumber) {
@@ -286,32 +285,30 @@ var openDialog = function (activePinNumber) {
 
 /**
  * Удаляет класс
- * @param {*} elems - Элементы для поиска удаляемого класса
+ * @param {nodeList} elems - Элементы для поиска удаляемого класса
  * @param {string} className - Удаляемый класс
  */
 var removeClass = function (elems, className) {
   elems.forEach(function (elem) {
-    if (elem.classList.contains(className)) {
-      elem.classList.remove(className);
-    }
+    elem.classList.remove(className);
   });
 };
 
 /**
  * Деактивирует активный пин и удаляет окно диалога
- * @param {object} evt
+ * @param {Event} evt
  */
 var deactivateDialogAndPin = function (evt) {
   if (evt.keyCode === KEYS.ESC || evt.type === 'click') {
     offerDialog.classList.add('hidden');
-    removeClass(pins, 'pin--active');
+    removeClass(pins, ACTIVE_PIN);
   }
 };
 
-for (var i = 0; i < pins.length; i++) {
-  pins[i].addEventListener('click', pinEventHandler);
-  pins[i].addEventListener('keydown', pinEventHandler);
-}
+pins.forEach(function (pin) {
+  pin.addEventListener('click', pinEventHandler);
+  pin.addEventListener('keydown', pinEventHandler);
+});
 
 dialogClose.addEventListener('click', deactivateDialogAndPin);
 document.body.addEventListener('keydown', deactivateDialogAndPin);
