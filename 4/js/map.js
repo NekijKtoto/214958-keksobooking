@@ -348,12 +348,11 @@ var syncFlatWithPrice = function () {
  */
 var syncRoomsWithGuests = function () {
   for (var i = 0; i < options.length; i++) {
-    if (CAPACITY_NUMBER[roomNumberField.value].includes(options[i].value)) {
-      options[i].disabled = false;
+    options[i].disabled = !CAPACITY_NUMBER[roomNumberField.value].includes(options[i].value);
+    if (!options[i].disabled) {
       capacityField.value = options[i].value;
-    } else {
-      options[i].disabled = true;
     }
+
   }
 };
 
@@ -372,11 +371,11 @@ var syncTimeOut = function () {
 };
 
 titleField.addEventListener('input', function () {
-  if (titleField.validity.patternMismatch) {
-    titleField.setCustomValidity('Пожалуйста, используйте не менее 30 символов');
-  } else {
-    titleField.setCustomValidity('');
-  }
+  titleField.setCustomValidity(
+      titleField.validity.patternMismatch ?
+        'Пожалуйста, используйте не менее 30 символов' :
+        ''
+  );
 });
 
 timeInField.addEventListener('change', syncTimeIn);
@@ -388,10 +387,6 @@ flatTypeField.addEventListener('change', syncFlatWithPrice);
 
 form.addEventListener('invalid', function () {
   formElems.forEach(function (elem) {
-    if (!elem.validity.valid) {
-      elem.classList.add('invalid');
-    } else {
-      elem.classList.remove('invalid');
-    }
+    elem.classList.toggle('invalid', !elem.validity.valid);
   });
 }, true);
