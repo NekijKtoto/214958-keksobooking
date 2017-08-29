@@ -311,6 +311,20 @@ var deactivateDialogAndPin = function (evt) {
 dialogClose.addEventListener('click', deactivateDialogAndPin);
 document.body.addEventListener('keydown', deactivateDialogAndPin);
 
+var PRICE = {
+  'flat': 1000,
+  'bungalo': 0,
+  'house': 5000,
+  'palace': 10000
+};
+
+var CAPACITY_NUMBER = {
+  '1': ['1'],
+  '2': ['1', '2'],
+  '3': ['1', '2', '3'],
+  '100': ['0']
+};
+
 var form = document.querySelector('.notice__form');
 var titleField = form.querySelector('#title');
 var timeInField = form.querySelector('#timein');
@@ -319,66 +333,42 @@ var flatTypeField = form.querySelector('#type');
 var priceField = form.querySelector('#price');
 var roomNumberField = form.querySelector('#room_number');
 var capacityField = form.querySelector('#capacity');
+var options = capacityField.querySelectorAll('option');
 var formElems = form.querySelectorAll('input:not([type="submit"]), select');
 
-var syncFlatAndPrice = function (evt) {
-  if (evt.target === priceField) {
-    if (priceField.value < 1000) {
-      flatTypeField.selectedIndex = 1;
-    } else if (priceField.value < 5000) {
-      flatTypeField.selectedIndex = 0;
-    } else if (priceField.value < 10000) {
-      flatTypeField.selectedIndex = 2;
+/**
+ * Синхронизирует цену с типом жилья
+ */
+var syncFlatWithPrice = function () {
+  priceField.min = PRICE[flatTypeField.value];
+};
+
+/**
+ * Синхронизирует количество гостей с количеством комнат
+ */
+var syncRoomsWithGuests = function () {
+  for (var i = 0; i < options.length; i++) {
+    if (CAPACITY_NUMBER[roomNumberField.value].includes(options[i].value)) {
+      options[i].disabled = false;
+      capacityField.value = options[i].value;
     } else {
-      flatTypeField.selectedIndex = 3;
-    }
-  } else if (evt.target === flatTypeField) {
-    switch (flatTypeField.selectedIndex) {
-      case 0:
-        priceField.min = 1000;
-        priceField.value = 1000;
-        break;
-      case 1:
-        priceField.min = 0;
-        priceField.value = 0;
-        break;
-      case 2:
-        priceField.min = 5000;
-        priceField.value = 5000;
-        break;
-      case 3:
-        priceField.min = 10000;
-        priceField.value = 10000;
-        break;
+      options[i].disabled = true;
     }
   }
 };
 
-var syncRoomsAndGuests = function (evt) {
-  if (evt.target === capacityField) {
-    switch (capacityField.selectedIndex) {
-      case 0:
-        roomNumberField.selectedIndex = 2;
-        break;
-      case 1:
-        roomNumberField.selectedIndex = 1;
-        break;
-      case 2:
-        roomNumberField.selectedIndex = 0;
-        break;
-      case 3:
-        roomNumberField.selectedIndex = 3;
-        break;
-    }
-  }
+/**
+ * Синхронизирует время выезда со временем заезда
+ */
+var syncTimeIn = function () {
+  timeOutField.selectedIndex = timeInField.selectedIndex;
 };
 
-var syncTime = function (evt) {
-  if (evt.target === timeInField) {
-    timeOutField.selectedIndex = timeInField.selectedIndex;
-  } else if (evt.target === timeOutField) {
-    timeInField.selectedIndex = timeOutField.selectedIndex;
-  }
+/**
+ * Синхронизирует время заезда со временем выезда
+ */
+var syncTimeOut = function () {
+  timeInField.selectedIndex = timeOutField.selectedIndex;
 };
 
 titleField.addEventListener('input', function () {
@@ -389,22 +379,19 @@ titleField.addEventListener('input', function () {
   }
 });
 
-timeInField.addEventListener('change', syncTime);
-timeOutField.addEventListener('change', syncTime);
+timeInField.addEventListener('change', syncTimeIn);
+timeOutField.addEventListener('change', syncTimeOut);
 
-priceField.addEventListener('change', syncFlatAndPrice);
-priceField.addEventListener('keyup', syncFlatAndPrice);
-flatTypeField.addEventListener('change', syncFlatAndPrice);
+roomNumberField.addEventListener('change', syncRoomsWithGuests);
 
-capacityField.addEventListener('change', syncRoomsAndGuests);
+flatTypeField.addEventListener('change', syncFlatWithPrice);
 
-form.addEventListener('submit', function (evt) {
+form.addEventListener('invalid', function () {
   formElems.forEach(function (elem) {
     if (!elem.validity.valid) {
-      elem.style.borderColor = 'red';
-      evt.preventDefault();
+      elem.classList.add('invalid');
     } else {
-      elem.style.borderColor = '';
+      elem.classList.remove('invalid');
     }
   });
-});
+}, true);
